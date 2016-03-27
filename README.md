@@ -115,6 +115,51 @@ We can then optimize the `sqerror` function just like any other function:
 res = optimize(sqerror, [0.0, 0.0], LBFGS())
 ```
 
+# API for accessing results
+
+After we have our results in `res`, we can use the API for getting optimization results. This consists of a collection of functions. They are not exported, so they have to be prefixed by `Optim.`. Say we have optimized the `sqerror` function above. If we can't remember what method we used, we simply use
+```jl
+Optim.method(res)
+```
+which will return `"L-BFGS"`. A bit more useful information is the minimizer and minimum of the objective functions, which can be found using
+```jl
+Optim.minimizer(res)
+# returns [0.766667, 2.1]     
+
+Optim.minimum(res)
+# returns 0.16666666666666652
+```
+
+A complete list of functions can be found below.
+
+Defined for all methods:
+* `method(res)`
+* `minimizer(res)`
+* `minimum(res)`
+* `iterations(res)`
+* `iteration_limit_reached(res)`
+* `trace(res)`
+* `x_trace(res)`
+* `f_trace(res)`
+* `f_calls(res)`
+* `converged(res)`
+
+Defined for univariate optimization:
+* `lower_bound(res)`
+* `upper_bound(res)`
+* `x_lower_trace(res)`
+* `x_upper_trace(res)`
+* `rel_tol(res)`
+* `abs_tol(res)`
+
+Defined for multivariate optimization:
+* `g_norm_trace(res)`
+* `g_calls(res)`
+* `x_converged(res)`
+* `f_converged(res)`
+* `g_converged(res)`
+* `initial_state(res)`
+
 # Configurable Options
 
 The section above described the basic API for the Optim package, although it is on the roadmap to update this soon. We employed several different optimization algorithms using the `method` keyword, which can take on any of the following values:
@@ -278,10 +323,20 @@ x0 = [2.0, 2.0]
 results = optimize(d4, x0, l, u, Fminbox())  # d4 from rosenbrock example
 ```
 
-This performs optimization with a barrier penalty, successively scaling down the barrier coefficient and using `cg` for convergence at each step.
+This performs optimization with a barrier penalty, successively scaling down the barrier coefficient and using `ConjugateGradient` for convergence at each step.
 
-This algorithm uses diagonal preconditioning to improve the accuracy, and hence is a good example of how to use `cg` with preconditioning. Only the box constraints are used. If you can analytically compute the diagonal of the Hessian of your objective function, you may want to consider writing your own preconditioner (see `nnls` for an example).
+This algorithm uses diagonal preconditioning to improve the accuracy, and hence is a good example of how to use `ConjugateGradient` with preconditioning. Only the box constraints are used. If you can analytically compute the diagonal of the Hessian of your objective function, you may want to consider writing your own preconditioner.
 
+There are two iterations parameters: an outer iterations parameter used to control `Fminbox` and an inner iterations parameter used to control `ConjugateGradient`. For this reason, the options syntax is a bit different from the rest of the package. All parameters regarding the outer iterations are passed as keyword arguments, and options for the interior optimizer is passed as an `OptimizationOptions` type using the keyword `optimizer_o`.
+
+For example, the following restricts the optimization to 2 major iterations
+```julia
+results = optimize(objective, x0, l, u, Fminbox(); iterations = 2)
+```
+In contrast, the following sets the maximum number of iterations for each `ConjugateGradient` optimization to 2
+```julia
+results = Optim.optimize(objective, x0, l, u, Fminbox(); optimizer_o = OptimizationOptions(iterations = 2))
+```
 ### Linear programming
 
 For linear programming and extensions, see the [JuMP](https://github.com/JuliaOpt/JuMP.jl) and [MathProgBase](https://github.com/JuliaOpt/MathProgBase.jl) packages.

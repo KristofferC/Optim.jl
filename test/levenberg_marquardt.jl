@@ -8,7 +8,7 @@ end
 initial_x = [100.0, 100.0]
 
 results = Optim.levenberg_marquardt(f_lm, g_lm, initial_x)
-@assert norm(results.minimum - [0.0, 2.0]) < 0.01
+@assert norm(Optim.minimizer(results) - [0.0, 2.0]) < 0.01
 
 
 function rosenbrock_res(x, r)
